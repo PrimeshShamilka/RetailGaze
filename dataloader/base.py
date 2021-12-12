@@ -50,6 +50,9 @@ class GooDataset(Dataset):
         print("Number of Images:", self.image_num)
         # logging.info('%s contains %d images' % (self.mat_file, self.image_num))
 
+    def __len__(self):
+        return self.image_num
+
     def __getitem__(self, idx):
         gaze_inside = True
         data = self.data[idx]
