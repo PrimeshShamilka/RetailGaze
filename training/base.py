@@ -38,7 +38,7 @@ def get_bb_binary(box):
             b[j][k] = 1
     return b
 
-def train_face3d(model,train_data_loader,validation_data_loader, criterion, optimizer, logger, writer ,num_epochs=5,patience=10):
+def train_base_model(model,train_data_loader,validation_data_loader, criterion, optimizer, logger, writer ,num_epochs=5,patience=10):
     since = time.time()
     n_total_steps = len(train_data_loader)
     n_total_steps_val = len(validation_data_loader)
@@ -95,7 +95,7 @@ def train_face3d(model,train_data_loader,validation_data_loader, criterion, opti
     return model
 
 
-def test_face3d(model, test_data_loader, logger, test_depth=True, save_output=False):
+def test_base_model(model, test_data_loader, logger, test_depth=True, save_output=False):
     model.eval()
     angle_error = []
     with torch.no_grad():

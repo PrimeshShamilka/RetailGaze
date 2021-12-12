@@ -4,9 +4,9 @@ import math
 import numpy as np
 import torchvision.models as models
 
-class Base(nn.Module):
+class BaseModel(nn.Module):
     def __init__(self):
-        super(Base, self).__init__()
+        super(BaseModel, self).__init__()
         self.img_feature_dim = 256  # the dimension of the CNN feature to represent each frame
         self.base_model = models.resnet50(pretrained=True)
         self.base_model.fc2 = nn.Linear(1000, self.img_feature_dim)
