@@ -55,6 +55,9 @@ def train_base_model(model,train_data_loader,validation_data_loader, criterion, 
             image =  img.cuda()
             optimizer.zero_grad()
             pred = model(image)
+            pred = pred
+            gt_label = gt_label.cuda()
+            gt_label = torch.tensor(gt_label, dtype=torch.float)
             loss = criterion(pred, gt_label)
             loss.backward()
             optimizer.step()
@@ -76,6 +79,7 @@ def train_base_model(model,train_data_loader,validation_data_loader, criterion, 
             image =  img.cuda()
             optimizer.zero_grad()
             pred = model(image)
+            gt_label = gt_label.cuda()
             loss = criterion(pred, gt_label)
             validation_loss.append(loss.item())
         val_loss = np.mean(validation_loss)
