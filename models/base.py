@@ -17,6 +17,7 @@ class BaseModel(nn.Module):
     def forward(self, image):
         feat = self.base_model(image)
         feat = torch.flatten(feat, start_dim=1)
+        feat = self.fc2(feat)
         output = self.last_layer(feat)
         return output
 
