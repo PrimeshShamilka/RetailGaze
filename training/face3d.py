@@ -59,6 +59,7 @@ def train_face3d(model,train_data_loader,validation_data_loader, criterion, opti
     n_total_steps = len(train_data_loader)
     n_total_steps_val = len(validation_data_loader)
     early_stopping = EarlyStopping(patience=patience, verbose=True)
+    amp_factor = 10000
     for epoch in range(num_epochs):
 
         model.train()  # Set model to training mode
@@ -91,7 +92,7 @@ def train_face3d(model,train_data_loader,validation_data_loader, criterion, opti
                 # label[i,2] = (depth[i,:,gt_label[i,0],gt_label[i,1]] - depth[i,:,head[i,0],head[i,1]])
             label = torch.tensor(label, dtype=torch.float)
             gaze = gaze.cpu()
-            loss = criterion(gaze, label)
+            loss = criterion(gaze, label)*amp_factor
             loss.backward()
             optimizer.step()
             running_loss.append(loss.item())
@@ -133,7 +134,7 @@ def train_face3d(model,train_data_loader,validation_data_loader, criterion, opti
                 # label[i,2] = (depth[i,:,gt_label[i,0],gt_label[i,1]] - depth[i,:,head[i,0],head[i,1]])
             label = torch.tensor(label, dtype=torch.float)
             gaze = gaze.cpu()
-            loss = criterion(gaze, label)
+            loss = criterion(gaze, label)*amp_factor
             validation_loss.append(loss.item())
         val_loss = np.mean(validation_loss)
 
