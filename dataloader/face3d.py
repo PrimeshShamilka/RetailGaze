@@ -512,7 +512,7 @@ class RetailGaze(Dataset):
             hbox = np.copy(data['ann']['hbox'])
             x_min, y_min, x_max, y_max = hbox
             face = img.crop((int(x_min), int(y_min), int(x_max), int(y_max)))
-            head_x=((x_min+y_min)/2)/640
+            head_x=((x_min+x_max)/2)/640
             head_y=((y_min+y_max)/2)/480
             head = np.array([head_x, head_y])
             # centers = (boxes2centers(gt_bboxes)*[224,224]).astype(int)
