@@ -128,7 +128,7 @@ def train_face3d(model,train_data_loader,validation_data_loader, criterion, opti
                 hbox_binary = torch.from_numpy(get_bb_binary(hbox))
                 hbox_depth = torch.mul(depth[i], hbox_binary)
                 head_depth = torch.sum(hbox_depth) / torch.sum(hbox_binary==1)
-                gt_depth = depth[i][0][int(gt_label[i][0]*224)][int(gt_label[i][1]*224)]
+                gt_depth = depth[i][0][int(gt_label[i][0]*224)-1][int(gt_label[i][1]*224)-1]
                 label[i, 2] = (gt_depth - head_depth)
                 # label[i,2] = (depth[i,:,gt_label[i,0],gt_label[i,1]] - depth[i,:,head[i,0],head[i,1]])
             label = torch.tensor(label, dtype=torch.float)
