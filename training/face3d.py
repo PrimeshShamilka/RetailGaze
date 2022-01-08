@@ -155,8 +155,9 @@ def train_face3d(model,train_data_loader,validation_data_loader, criterion, opti
 def test_face3d(model, test_data_loader, logger, test_depth=True, save_output=False):
     model.eval()
     angle_error = []
+    l2=[]
     with torch.no_grad():
-        for img, face, location_channel,object_channel,head_channel ,head,gt_label, head_box, gtbox in test_data_loader:
+        for img, face, head, gt_label, head_box, image_path in test_data_loader: 
             image =  img.cuda()
             face = face.cuda()
             gaze,depth = model(image,face)
@@ -164,23 +165,18 @@ def test_face3d(model, test_data_loader, logger, test_depth=True, save_output=Fa
             depth = depth / max_depth
             depth =  depth.cpu()
             gaze =  gaze.cpu().data.numpy()
-            head_box = head_box.cpu().detach().numpy() * 224
-            head_box = head_box.astype(int)
-            gtbox = gtbox.cpu().detach().numpy() * 224
-            gtbox = gtbox.astype(int)
             label = np.zeros((image.shape[0],3))
             for i in range(image.shape[0]):
+                hbox = head_box[i].cpu().detach().numpy()*224
+                hbox = hbox.astype(int)
                 gt = (gt_label[i] - head[i])/224
                 label[i,0] = gt[0]
                 label[i,1] = gt[1]
-                hbox_binary = torch.from_numpy(get_bb_binary(head_box[i]))
-                gtbox_binary = torch.from_numpy(get_bb_binary(gtbox[i]))
+                hbox_binary = torch.from_numpy(get_bb_binary(hbox))
                 hbox_depth = torch.mul(depth[i], hbox_binary)
-                gtbox_depth = torch.mul(depth[i], gtbox_binary)
                 head_depth = torch.sum(hbox_depth) / torch.sum(hbox_binary == 1)
-                gt_depth = torch.sum(gtbox_depth) / torch.sum(gtbox_binary == 1)
+                gt_depth = depth[i][0][int(gt_label[i][0]*224)-1][int(gt_label[i][1]*224)-1]
                 label[i, 2] = (gt_depth - head_depth)
-                # label[i,2] = (depth[i,:,gt_label[i,0],gt_label[i,1]] - depth[i,:,head[i,0],head[i,1]])
             for i in range(img.shape[0]):
                 if test_depth == True:
                     ae = np.dot(gaze[i,:],label[i,:])/(np.sqrt(np.dot(label[i,:],label[i,:])*np.dot(gaze[i,:],gaze[i,:]))+np.finfo(np.float32).eps)
@@ -188,5 +184,11 @@ def test_face3d(model, test_data_loader, logger, test_depth=True, save_output=Fa
                     ae = np.dot(gaze[i,:2],label[i,:2])/(np.sqrt(np.dot(label[i,:2],label[i,:2])*np.dot(gaze[i,:2], gaze[i,:2]))+np.finfo(np.float32).eps)
                 ae = np.arccos(np.maximum(np.minimum(ae,1.0),-1.0)) * 180 / np.pi
                 angle_error.append(ae)
+
+                # L2 dist
+                euclid_dist = np.sqrt(np.power((label[i, 0] - gaze[i, 0]), 2) + np.power((label[i, 1] - gaze[i, 1]), 2))
+                l2.append(euclid_dist)
+
         angle_error = np.mean(np.array(angle_error),axis=0)
-    print(angle_error)
+        l2_dist = np.mean(np.array(l2), axis=0)
+    print(angle_error, l2_dist)

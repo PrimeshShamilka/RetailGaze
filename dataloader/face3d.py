@@ -527,7 +527,7 @@ class RetailGaze(Dataset):
                 face = self.transform2(face)
 
             if self.training == 'test':
-                pass
+                return img, face, head, gt_label, head_box, image_path
             elif self.training == 'test_prediction':
                 pass
             else:
