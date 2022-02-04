@@ -18,7 +18,7 @@ from utils_logging import setup_logger
 
 # from models.__init__ import save_checkpoint, resume_checkpoint
 from models.face3d import Face3D
-from dataloader.face3d import RetailGaze
+from dataloader.face3d import RetailGaze, RetailGaze2
 from dataloader import chong_imutils
 from training.face3d import train_face3d, GazeOptimizer, test_face3d
 from torch.nn.utils.rnn import pad_sequence
@@ -41,19 +41,19 @@ val_pickle_path = '/media/primesh/F4D0EA80D0EA49061/PROJECTS/FYP/Gaze detection/
 
 
 print ('Train')
-train_set = RetailGaze(images_dir, pickle_path, 'train')
+train_set = RetailGaze2(images_dir, pickle_path, 'train')
 train_data_loader = DataLoader(dataset=train_set,
                                            batch_size=batch_size,
                                            shuffle=True,
                                            num_workers=16)
 print ('Val')
-val_set = RetailGaze(val_images_dir, val_pickle_path, 'train')
+val_set = RetailGaze2(val_images_dir, val_pickle_path, 'train')
 val_data_loader = DataLoader(dataset=val_set,
                                            batch_size=4,
                                            shuffle=True,
                                            num_workers=16)
 print ('Test')
-test_set = RetailGaze(test_images_dir, test_pickle_path, 'test')
+test_set = RetailGaze2(test_images_dir, test_pickle_path, 'test')
 test_data_loader = DataLoader(test_set, batch_size=batch_size//2,
                             shuffle=False, num_workers=8)
 
@@ -118,8 +118,8 @@ if False:
 from torch.utils.tensorboard import SummaryWriter
 writer = SummaryWriter('runs/face_3d')
 
-# train_face3d(model, train_data_loader, val_data_loader, criterion, optimizer, logger, writer, num_epochs=50, patience=10)
-test_face3d(model, test_data_loader, logger, test_depth=False)
+train_face3d(model, train_data_loader, val_data_loader, criterion, optimizer, logger, writer, num_epochs=50, patience=10)
+# test_face3d(model, test_data_loader, logger, test_depth=False)
 # train_face_depth(model_ft2, train_data_loader, val_data_loader, criterion, optimizer, logger, writer, num_epochs=50, patience=10)
 # test_face_depth(model_ft2, test_data_loader, logger)
 # train_face3d_bias(model_ft2, train_data_loader, val_data_loader, criterion, optimizer, logger, writer, num_epochs=50, patience=10)

@@ -519,6 +519,18 @@ class RetailGaze(Dataset):
             gt_label = np.array([gaze_x, gaze_y])
             head_box = np.array([x_min/640, y_min/480, x_max/640, y_max/480])
 
+            #plot gaze point
+            # i = cv2.imread(image_path)
+            # i=cv2.resize(i, (448, 448))
+            # p=(gt_label*448).astype(np.int)
+            # p2=(head*448).astype(np.int)
+            # x,y=p
+            # x2, y2=p2
+            # i = cv2.circle(i, (x,y), radius=0, color=(0, 0, 255), thickness=4)
+            # i = cv2.circle(i, (x2,y2), radius=0, color=(0, 0, 255), thickness=8)
+            # cv2.imwrite('/home/primesh/Desktop/fig.jpg', i)
+            # face.save('/home/primesh/Desktop/face.jpg')
+
             if self.imshow:
                 img.save("img_aug.jpg")
 
@@ -593,6 +605,14 @@ class RetailGaze2(Dataset):
                 x_max = 0
             if y_max < 0:
                 y_max = 0
+            if x_min > 1:
+                x_min = 1
+            if y_min > 1:
+                y_min = 1
+            if x_max > 1:
+                x_max = 1
+            if y_max > 1:
+                y_max = 1
             x_min -= k * abs(x_max - x_min)
             y_min -= k * abs(y_max - y_min)
             x_max += k * abs(x_max - x_min)
@@ -609,6 +629,18 @@ class RetailGaze2(Dataset):
 
             gt_label = np.array([gaze_x, gaze_y])
             head_box = np.array([x_min/640, y_min/480, x_max/640, y_max/480])
+
+            #plot gaze point
+            # i = cv2.imread(image_path)
+            # i=cv2.resize(i, (448, 448))
+            # p=(gt_label*448).astype(np.int)
+            # p2=(head*448).astype(np.int)
+            # x,y=p
+            # x2, y2=p2
+            # i = cv2.circle(i, (x,y), radius=0, color=(0, 0, 255), thickness=4)
+            # i = cv2.circle(i, (x2,y2), radius=0, color=(0, 0, 255), thickness=8)
+            # cv2.imwrite('/home/primesh/Desktop/fig.jpg', i)
+            # face.save('/home/primesh/Desktop/face.jpg')
 
             if self.imshow:
                 img.save("img_aug.jpg")
