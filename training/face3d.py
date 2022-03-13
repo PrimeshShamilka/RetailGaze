@@ -81,7 +81,7 @@ def train_face3d(model,train_data_loader,validation_data_loader, criterion, opti
             for i in range(image.shape[0]):
                 hbox = head_box[i].cpu().detach().numpy()*224
                 hbox = hbox.astype(int)
-                gt = (gt_label[i] - head[i])/224
+                gt = (gt_label[i] - head[i])
                 label[i,0] = gt[0]
                 label[i,1] = gt[1]
                 hbox_binary = torch.from_numpy(get_bb_binary(hbox))
