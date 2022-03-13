@@ -97,12 +97,12 @@ def train_face3d(model,train_data_loader,validation_data_loader, criterion, opti
             optimizer.step()
             running_loss.append(loss.item())
             running_loss2.append(loss.item())
-            if i % 10 == 9:
-                logger.info('%s'%(str(np.mean(running_loss))))
-                writer.add_scalar('training_loss',np.mean(running_loss),epoch*n_total_steps+i)
-                running_loss = []
+    # if i % 10 == 9:
+        logger.info('%s'%(str(np.mean(running_loss))))
+        writer.add_scalar('training_loss',np.mean(running_loss),epoch*n_total_steps+i)
+        running_loss = []
 
-        with open('training_loss.cvs', 'a') as f:
+        with open('/content/drive/MyDrive/Face3D/training_loss.cvs', 'a') as f:
             writer_csv = csv.writer(f)
             writer_csv.writerow([epoch * n_total_steps, str(np.mean(running_loss2))])
         running_loss2 = []
@@ -140,7 +140,7 @@ def train_face3d(model,train_data_loader,validation_data_loader, criterion, opti
 
         logger.info('%s'%(str(val_loss)))
         writer.add_scalar('validation_loss',val_loss,epoch)
-        with open ('validation_loss.cvs', 'a') as f:
+        with open ('/content/drive/MyDrive/Face3D/validation_loss.cvs', 'a') as f:
             writer_csv2 = csv.writer(f)
             writer_csv2.writerow([epoch*n_total_steps, str(val_loss)])
         validation_loss = []
