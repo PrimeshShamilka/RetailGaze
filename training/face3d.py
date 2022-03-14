@@ -212,7 +212,7 @@ def test_face3d(model, test_data_loader, logger, test_depth=True, save_output=Fa
             for i in range(image.shape[0]):
                 hbox = head_box[i].cpu().detach().numpy()*224
                 hbox = hbox.astype(int)
-                gt = (gt_label[i] - head[i])/224
+                gt = (gt_label[i] - head[i])
                 pred = head + gaze[i, :2]
                 # pred_point[i,0] = pred[0]
                 # pred_point[i,1] = pred[1]

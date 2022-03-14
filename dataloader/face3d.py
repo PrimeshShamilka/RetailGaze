@@ -388,164 +388,288 @@ class GazeDataset(Dataset):
             return img, face, head_point, gt_point
 
 
-class RetailGazeDataset(Dataset):
-    def __init__(self, root_dir, mat_file, training='train', include_path=False, input_size=224, output_size=64,
-                 imshow=False, use_gtbox=True):
-        assert (training in set(['train', 'test', 'test_prediction']))
-        self.root_dir = root_dir
-        self.mat_file = mat_file
-        self.training = training
-        self.include_path = include_path
-        self.input_size = input_size
-        self.output_size = output_size
-        self.imshow = imshow
-        self.transform = _get_transform(input_size)
-        self.transform2 = _get_transform2()
-        self.use_gtbox = use_gtbox
+# class RetailGazeDataset(Dataset):
+#     def __init__(self, root_dir, mat_file, training='train', include_path=False, input_size=224, output_size=64,
+#                  imshow=False, use_gtbox=True):
+#         assert (training in set(['train', 'test', 'test_prediction']))
+#         self.root_dir = root_dir
+#         self.mat_file = mat_file
+#         self.training = training
+#         self.include_path = include_path
+#         self.input_size = input_size
+#         self.output_size = output_size
+#         self.imshow = imshow
+#         self.transform = _get_transform(input_size)
+#         self.transform2 = _get_transform2()
+#         self.use_gtbox = use_gtbox
 
-        with open(mat_file, 'rb') as f:
-            self.data = pickle.load(f)
-            self.image_num = len(self.data)
+#         with open(mat_file, 'rb') as f:
+#             self.data = pickle.load(f)
+#             self.image_num = len(self.data)
 
-        print("Number of Images:", self.image_num)
-        logging.info('%s contains %d images' % (self.mat_file, self.image_num))
+#         print("Number of Images:", self.image_num)
+#         logging.info('%s contains %d images' % (self.mat_file, self.image_num))
 
-    def create_mask(self, seg_idx, width=640, height=480):
-        seg_idx = seg_idx.astype(np.int64)
-        seg_mask = np.zeros((height, width)).astype(np.uint8)
-        for i in range(seg_idx.shape[0]):
-            seg_mask[seg_idx[i, 1], seg_idx[i, 0]] = 255
-        return seg_mask
+#     def create_mask(self, seg_idx, width=640, height=480):
+#         seg_idx = seg_idx.astype(np.int64)
+#         seg_mask = np.zeros((height, width)).astype(np.uint8)
+#         for i in range(seg_idx.shape[0]):
+#             seg_mask[seg_idx[i, 1], seg_idx[i, 0]] = 255
+#         return seg_mask
 
-    def __len__(self):
-        return self.image_num
+#     def __len__(self):
+#         return self.image_num
 
-    def __getitem__(self, idx):
+#     def __getitem__(self, idx):
 
-        gaze_inside = True
-        data = self.data[idx]
-        image_path = data['filename']
-        image_path = os.path.join(self.root_dir, image_path)
+#         gaze_inside = True
+#         data = self.data[idx]
+#         image_path = data['filename']
+#         image_path = os.path.join(self.root_dir, image_path)
 
-        image_path = image_path.replace('\\', '/')
-        img = Image.open(image_path)
-        img = img.convert('RGB')
-        width, height = img.size
-        # Get bounding boxes and class labels as well as gt index for gazed object
-        gt_bboxes, gt_labels = np.zeros(1), np.zeros(1)
-        gt_labels = np.expand_dims(gt_labels, axis=0)
-        hbox = data['ann']['hbox']
+#         image_path = image_path.replace('\\', '/')
+#         img = Image.open(image_path)
+#         img = img.convert('RGB')
+#         width, height = img.size
+#         # Get bounding boxes and class labels as well as gt index for gazed object
+#         gt_bboxes, gt_labels = np.zeros(1), np.zeros(1)
+#         gt_labels = np.expand_dims(gt_labels, axis=0)
+#         hbox = data['ann']['hbox']
 
-        x_min, y_min, x_max, y_max = hbox
-        # Crop the face
-        face = img.crop((int(x_min), int(y_min), int(x_max), int(y_max)))
-        # Eyes_loc
-        eye_x = int(((x_min+x_max)/2))
-        eye_y = int(((y_min+y_max)/2))
-        eye_x = int((eye_x/640)*224)
-        eye_y = int((eye_y/480)*224)
-        eyes_loc = [eye_x, eye_y]
+#         x_min, y_min, x_max, y_max = hbox
+#         # Crop the face
+#         face = img.crop((int(x_min), int(y_min), int(x_max), int(y_max)))
+#         # Eyes_loc
+#         eye_x = int(((x_min+x_max)/2))
+#         eye_y = int(((y_min+y_max)/2))
+#         eye_x = int((eye_x/640)*224)
+#         eye_y = int((eye_y/480)*224)
+#         eyes_loc = [eye_x, eye_y]
 
-        if self.imshow:
-            img.save("img_aug.jpg")
-            face.save('face_aug.jpg')
+#         if self.imshow:
+#             img.save("img_aug.jpg")
+#             face.save('face_aug.jpg')
 
-        if self.transform is not None:
-            img = self.transform(img)
-            face = self.transform2(face)
-        if self.training == 'test':
-            return img, face, eyes_loc, image_path
-        elif self.training == 'test_prediction':
-            return img, face, gt_bboxes, gt_labels
-        else:
-            return img, face
+#         if self.transform is not None:
+#             img = self.transform(img)
+#             face = self.transform2(face)
+#         if self.training == 'test':
+#             return img, face, eyes_loc, image_path
+#         elif self.training == 'test_prediction':
+#             return img, face, gt_bboxes, gt_labels
+#         else:
+#             return img, face
 
 
-class RetailGaze(Dataset):
-        def __init__(self, root_dir, mat_file, training='train', include_path=False, input_size=224, output_size=64, imshow = False, use_gtbox=False):
-            assert (training in set(['train', 'test']))
-            self.root_dir = root_dir
-            self.mat_file = mat_file
-            self.training = training
-            self.include_path = include_path
-            self.input_size = input_size
-            self.output_size = output_size
-            self.imshow = imshow
-            self.transform = _get_transform(input_size)
-            self.transform2 = _get_transform2()
-            self.use_gtbox= use_gtbox
+# class RetailGaze(Dataset):
+#         def __init__(self, root_dir, mat_file, training='train', include_path=False, input_size=224, output_size=64, imshow = False, use_gtbox=False):
+#             assert (training in set(['train', 'test', 'inference']))
+#             self.root_dir = root_dir
+#             self.mat_file = mat_file
+#             self.training = training
+#             self.include_path = include_path
+#             self.input_size = input_size
+#             self.output_size = output_size
+#             self.imshow = imshow
+#             self.transform = _get_transform(input_size)
+#             self.transform2 = _get_transform2()
+#             self.use_gtbox= use_gtbox
 
-            with open(mat_file, 'rb') as f:
-                self.data = pickle.load(f)
-                self.image_num = len(self.data)
+#             with open(mat_file, 'rb') as f:
+#                 self.data = pickle.load(f)
+#                 self.image_num = len(self.data)
 
-            print("Number of Images:", self.image_num)
-            # logging.info('%s contains %d images' % (self.mat_file, self.image_num))
+#             print("Number of Images:", self.image_num)
+#             # logging.info('%s contains %d images' % (self.mat_file, self.image_num))
 
-        def __len__(self):
-            return self.image_num
+#         def __len__(self):
+#             return self.image_num
 
-        def __getitem__(self, idx):
-            gaze_inside = True
-            data = self.data[idx]
-            image_path = data['filename']
-            image_path = os.path.join(self.root_dir, image_path)
+#         def __getitem__(self, idx):
+#             gaze_inside = True
+#             data = self.data[idx]
+#             image_path = data['filename']
+#             image_path = os.path.join(self.root_dir, image_path)
 
-            # eye = [float(data['hx'])/640, float(data['hy'])/480]
-            gaze = [float(data['gaze_cx'])/640, float(data['gaze_cy'])/480]
-            # eyess = np.array([eye[0],eye[1]]).astype(np.float)
-            gaze_x, gaze_y = gaze
+#             # eye = [float(data['hx'])/640, float(data['hy'])/480]
+#             gaze = [float(data['gaze_cx'])/640, float(data['gaze_cy'])/480]
+#             # eyess = np.array([eye[0],eye[1]]).astype(np.float)
+#             gaze_x, gaze_y = gaze
 
-            image_path = image_path.replace('\\', '/')
-            img = Image.open(image_path)
-            img = img.convert('RGB')
-            width, height = img.size
-            #Get bounding boxes and class labels as well as gt index for gazed object
-            gt_bboxes, gt_labels = np.zeros(1), np.zeros(1)
-            gt_labels = np.expand_dims(gt_labels, axis=0)
-            # gaze_idx = np.copy(data['gazeIdx']).astype(np.int64) #index of gazed object
-            # gaze_class = np.copy(data['gaze_item']).astype(np.int64) #class of gazed object
-            if self.use_gtbox:
-                gt_bboxes = np.copy(data['ann']['bboxes']) / [640, 480, 640, 480]
-                gt_labels = np.copy(data['ann']['labels'])
-                # gtbox = gt_bboxes[gaze_idx]
-            hbox = np.copy(data['ann']['hbox'])
-            x_min, y_min, x_max, y_max = hbox
-            face = img.crop((int(x_min), int(y_min), int(x_max), int(y_max)))
-            head_x=((x_min+x_max)/2)/640
-            head_y=((y_min+y_max)/2)/480
-            head = np.array([head_x, head_y])
-            # centers = (boxes2centers(gt_bboxes)*[224,224]).astype(int)
-            gt_label = np.array([gaze_x, gaze_y])
-            head_box = np.array([x_min/640, y_min/480, x_max/640, y_max/480])
+#             image_path = image_path.replace('\\', '/')
+#             img = Image.open(image_path)
+#             img = img.convert('RGB')
+#             width, height = img.size
+#             #Get bounding boxes and class labels as well as gt index for gazed object
+#             gt_bboxes, gt_labels = np.zeros(1), np.zeros(1)
+#             gt_labels = np.expand_dims(gt_labels, axis=0)
+#             # gaze_idx = np.copy(data['gazeIdx']).astype(np.int64) #index of gazed object
+#             # gaze_class = np.copy(data['gaze_item']).astype(np.int64) #class of gazed object
+#             if self.use_gtbox:
+#                 gt_bboxes = np.copy(data['ann']['bboxes']) / [640, 480, 640, 480]
+#                 gt_labels = np.copy(data['ann']['labels'])
+#                 # gtbox = gt_bboxes[gaze_idx]
+#             hbox = np.copy(data['ann']['hbox'])
+#             x_min, y_min, x_max, y_max = hbox
+#             face = img.crop((int(x_min), int(y_min), int(x_max), int(y_max)))
+#             head_x=((x_min+x_max)/2)/640
+#             head_y=((y_min+y_max)/2)/480
+#             head = np.array([head_x, head_y])
+#             # centers = (boxes2centers(gt_bboxes)*[224,224]).astype(int)
+#             gt_label = np.array([gaze_x, gaze_y])
+#             head_box = np.array([x_min/640, y_min/480, x_max/640, y_max/480])
 
-            #plot gaze point
-            # i = cv2.imread(image_path)
-            # i=cv2.resize(i, (448, 448))
-            # p=(gt_label*448).astype(np.int)
-            # p2=(head*448).astype(np.int)
-            # x,y=p
-            # x2, y2=p2
-            # i = cv2.circle(i, (x,y), radius=0, color=(0, 0, 255), thickness=4)
-            # i = cv2.circle(i, (x2,y2), radius=0, color=(0, 0, 255), thickness=8)
-            # cv2.imwrite('/home/primesh/Desktop/fig.jpg', i)
-            # face.save('/home/primesh/Desktop/face.jpg')
+#             #plot gaze point
+#             # i = cv2.imread(image_path)
+#             # i=cv2.resize(i, (448, 448))
+#             # p=(gt_label*448).astype(np.int)
+#             # p2=(head*448).astype(np.int)
+#             # x,y=p
+#             # x2, y2=p2
+#             # i = cv2.circle(i, (x,y), radius=0, color=(0, 0, 255), thickness=4)
+#             # i = cv2.circle(i, (x2,y2), radius=0, color=(0, 0, 255), thickness=8)
+#             # cv2.imwrite('/home/primesh/Desktop/fig.jpg', i)
+#             # face.save('/home/primesh/Desktop/face.jpg')
 
-            if self.imshow:
-                img.save("img_aug.jpg")
+#             # segmentation mask layers
+#             seg_path='/media/primesh/F4D0EA80D0EA49061/PROJECTS/FYP/Gaze detection/code/scripts/seg_mask'
+#             masks=os.listdir(seg_path)
+#             for mask in masks[:]:
+#                 if not(mask.endswith('.png')):
+#                     masks.remove(mask)
+#             layers=[]
+#             for mask in masks:
+#                 layer=cv2.imread(seg_path+'/'+mask, 0)
+#                 layers.append(layer)
 
-            if self.transform is not None:
-                img = self.transform(img)
-                face = self.transform2(face)
+#             if self.imshow:
+#                 img.save("img_aug.jpg")
 
-            if self.training == 'test':
-                return img, face, head, gt_label, head_box, image_path
-            elif self.training == 'test_prediction':
-                pass
-            else:
-                return img, face, head, gt_label, head_box, image_path
+#             if self.transform is not None:
+#                 img = self.transform(img)
+#                 face = self.transform2(face)
 
-class RetailGaze2(Dataset):
+#             if self.training == 'test':
+#                 return img, face, head, gt_label, head_box, image_path
+#             elif self.training == 'test_prediction':
+#                 pass
+#             elif self.training == 'inference':
+#                 return img, face, head, gt_label, head_box, image_path, layers
+#             else:
+#                 return img, face, head, gt_label, head_box, image_path
+
+# class RetailGaze2(Dataset):
+#         def __init__(self, root_dir, mat_file, training='train', include_path=False, input_size=224, output_size=64, imshow = False, use_gtbox=False):
+#             assert (training in set(['train', 'test']))
+#             self.root_dir = root_dir
+#             self.mat_file = mat_file
+#             self.training = training
+#             self.include_path = include_path
+#             self.input_size = input_size
+#             self.output_size = output_size
+#             self.imshow = imshow
+#             self.transform = _get_transform(input_size)
+#             self.use_gtbox= use_gtbox
+
+#             with open(mat_file, 'rb') as f:
+#                 self.data = pickle.load(f)
+#                 self.image_num = len(self.data)
+
+#             print("Number of Images:", self.image_num)
+#             # logging.info('%s contains %d images' % (self.mat_file, self.image_num))
+
+#         def __len__(self):
+#             return self.image_num
+
+#         def __getitem__(self, idx):
+#             gaze_inside = True
+#             data = self.data[idx]
+#             image_path = data['filename']
+#             image_path = os.path.join(self.root_dir, image_path)
+
+#             gaze = [float(data['gaze_cx'])/640, float(data['gaze_cy'])/480]
+#             # eyess = np.array([eye[0],eye[1]]).astype(np.float)
+#             gaze_x, gaze_y = gaze
+
+#             image_path = image_path.replace('\\', '/')
+#             img = Image.open(image_path)
+#             img = img.convert('RGB')
+#             width, height = img.size
+#             #Get bounding boxes and class labels as well as gt index for gazed object
+#             gt_bboxes, gt_labels = np.zeros(1), np.zeros(1)
+#             gt_labels = np.expand_dims(gt_labels, axis=0)
+#             width, height = img.size
+#             hbox = np.copy(data['ann']['hbox'])
+#             x_min, y_min, x_max, y_max = hbox
+#             head_x=((x_min+x_max)/2)/640
+#             head_y=((y_min+y_max)/2)/480
+#             eye = np.array([head_x, head_y])
+#             eye_x, eye_y = eye
+#             k = 0.1
+#             x_min = (eye_x - 0.15) * width
+#             y_min = (eye_y - 0.15) * height
+#             x_max = (eye_x + 0.15) * width
+#             y_max = (eye_y + 0.15) * height
+#             if x_min < 0:
+#                 x_min = 0
+#             if y_min < 0:
+#                 y_min = 0
+#             if x_max < 0:
+#                 x_max = 0
+#             if y_max < 0:
+#                 y_max = 0
+#             if x_min > 1:
+#                 x_min = 1
+#             if y_min > 1:
+#                 y_min = 1
+#             if x_max > 1:
+#                 x_max = 1
+#             if y_max > 1:
+#                 y_max = 1
+#             x_min -= k * abs(x_max - x_min)
+#             y_min -= k * abs(y_max - y_min)
+#             x_max += k * abs(x_max - x_min)
+#             y_max += k * abs(y_max - y_min)
+#             x_min, y_min, x_max, y_max = map(float, [x_min, y_min, x_max, y_max])
+#             if self.use_gtbox:
+#                 gt_bboxes = np.copy(data['ann']['bboxes']) / [640, 480, 640, 480]
+#                 gt_labels = np.copy(data['ann']['labels'])
+#                 # gtbox = gt_bboxes[gaze_idx]
+#             face = img.crop((int(x_min), int(y_min), int(x_max), int(y_max)))
+#             head_x=((x_min+x_max)/2)/640
+#             head_y=((y_min+y_max)/2)/480
+#             head = np.array([head_x, head_y])
+
+#             gt_label = np.array([gaze_x, gaze_y])
+#             head_box = np.array([x_min/640, y_min/480, x_max/640, y_max/480])
+
+#             #plot gaze point
+#             # i = cv2.imread(image_path)
+#             # i=cv2.resize(i, (448, 448))
+#             # p=(gt_label*448).astype(np.int)
+#             # p2=(head*448).astype(np.int)
+#             # x,y=p
+#             # x2, y2=p2
+#             # i = cv2.circle(i, (x,y), radius=0, color=(0, 0, 255), thickness=4)
+#             # i = cv2.circle(i, (x2,y2), radius=0, color=(0, 0, 255), thickness=8)
+#             # cv2.imwrite('/home/primesh/Desktop/fig.jpg', i)
+#             # face.save('/home/primesh/Desktop/face.jpg')
+
+#             if self.imshow:
+#                 img.save("img_aug.jpg")
+
+#             if self.transform is not None:
+#                 img = self.transform(img)
+#                 face = self.transform(face)
+
+#             if self.training == 'test':
+#                 return img, face, head, gt_label, head_box, image_path
+#             elif self.training == 'test_prediction':
+#                 pass
+#             else:
+#                 return img, face, head, gt_label, head_box, image_path
+
+class RetailGaze1(Dataset):
         def __init__(self, root_dir, mat_file, training='train', include_path=False, input_size=224, output_size=64, imshow = False, use_gtbox=False):
             assert (training in set(['train', 'test']))
             self.root_dir = root_dir
@@ -605,14 +729,6 @@ class RetailGaze2(Dataset):
                 x_max = 0
             if y_max < 0:
                 y_max = 0
-            if x_min > 1:
-                x_min = 1
-            if y_min > 1:
-                y_min = 1
-            if x_max > 1:
-                x_max = 1
-            if y_max > 1:
-                y_max = 1
             x_min -= k * abs(x_max - x_min)
             y_min -= k * abs(y_max - y_min)
             x_max += k * abs(x_max - x_min)
@@ -630,18 +746,6 @@ class RetailGaze2(Dataset):
             gt_label = np.array([gaze_x, gaze_y])
             head_box = np.array([x_min/640, y_min/480, x_max/640, y_max/480])
 
-            #plot gaze point
-            # i = cv2.imread(image_path)
-            # i=cv2.resize(i, (448, 448))
-            # p=(gt_label*448).astype(np.int)
-            # p2=(head*448).astype(np.int)
-            # x,y=p
-            # x2, y2=p2
-            # i = cv2.circle(i, (x,y), radius=0, color=(0, 0, 255), thickness=4)
-            # i = cv2.circle(i, (x2,y2), radius=0, color=(0, 0, 255), thickness=8)
-            # cv2.imwrite('/home/primesh/Desktop/fig.jpg', i)
-            # face.save('/home/primesh/Desktop/face.jpg')
-
             if self.imshow:
                 img.save("img_aug.jpg")
 
@@ -655,3 +759,146 @@ class RetailGaze2(Dataset):
                 pass
             else:
                 return img, face, head, gt_label, head_box, image_path
+
+
+class RetailGaze2(Dataset):
+        def __init__(self, root_dir, mat_file, training='train', include_path=False, input_size=224, output_size=64, imshow = False, use_gtbox=False):
+            assert (training in set(['train', 'test']))
+            self.root_dir = root_dir
+            self.mat_file = mat_file
+            self.training = training
+            self.include_path = include_path
+            self.input_size = input_size
+            self.output_size = output_size
+            self.imshow = imshow
+            self.transform = _get_transform(input_size)
+            self.use_gtbox= use_gtbox
+
+            with open(mat_file, 'rb') as f:
+                self.data = pickle.load(f)
+                self.image_num = len(self.data)
+
+            print("Number of Images:", self.image_num)
+            # logging.info('%s contains %d images' % (self.mat_file, self.image_num))
+
+        def __len__(self):
+            return self.image_num
+
+        def __getitem__(self, idx):
+            gaze_inside = True
+            data = self.data[idx]
+            image_path = data['filename']
+            image_path = os.path.join(self.root_dir, image_path)
+
+            gaze = np.array([float(data['gaze_cx'])/640, float(data['gaze_cy'])/480])
+            # eyess = np.array([eye[0],eye[1]]).astype(np.float)
+            gaze_x, gaze_y = gaze
+
+            image_path = image_path.replace('\\', '/')
+            img = Image.open(image_path)
+            img = img.convert('RGB')
+            width, height = img.size
+            #Get bounding boxes and class labels as well as gt index for gazed object
+            gt_bboxes, gt_labels = np.zeros(1), np.zeros(1)
+            gt_labels = np.expand_dims(gt_labels, axis=0)
+            width, height = img.size
+            hbox = np.copy(data['ann']['hbox'])
+            x_min, y_min, x_max, y_max = hbox
+            head_x=((x_min+x_max)/2)/640
+            head_y=((y_min+y_max)/2)/480
+            eye = np.array([head_x, head_y])
+            eye_x, eye_y = eye
+            k = 0.1
+            x_min = (eye_x - 0.15) * width
+            y_min = (eye_y - 0.15) * height
+            x_max = (eye_x + 0.15) * width
+            y_max = (eye_y + 0.15) * height
+            if x_min < 0:
+                x_min = 0
+            if y_min < 0:
+                y_min = 0
+            if x_max < 0:
+                x_max = 0
+            if y_max < 0:
+                y_max = 0
+            x_min -= k * abs(x_max - x_min)
+            y_min -= k * abs(y_max - y_min)
+            x_max += k * abs(x_max - x_min)
+            y_max += k * abs(y_max - y_min)
+            x_min, y_min, x_max, y_max = map(float, [x_min, y_min, x_max, y_max])
+
+            mask_path = image_path.split('/')[:-1]
+            mask_path = '/'.join(mask_path) + "/combined.png"
+            mask = cv2.imread(mask_path,0)
+            mask = cv2.resize(mask, (224,224), interpolation = cv2.INTER_AREA)
+            mask_tensor = image_to_tensor(mask)
+            object_channel = mask_tensor/255.0
+
+            head_box = np.array([x_min/640, y_min/480, x_max/640, y_max/480])
+            #segmentation layers
+            seg_path_temp = image_path.split('/')[:-1]
+            seg_path = '/'.join(seg_path_temp) + "/masks"
+            seg_folder = '/'.join(seg_path_temp[-2:]) + "/masks"
+            masks=os.listdir(seg_path)
+            for segmask in masks[:]:
+                if not(segmask.endswith('.png')):
+                    segmask.remove(segmask)
+            layers=[]
+            for segmask in masks:
+                layer=cv2.imread(seg_path+'/'+segmask, 0)
+                layers.append(layer)
+
+            head_channel = chong_imutils.get_head_box_channel(x_min, y_min, x_max, y_max, width, height,
+                                                        resolution=self.input_size, coordconv=False).unsqueeze(0)
+
+            # Crop the face
+            face = img.crop((int(x_min), int(y_min), int(x_max), int(y_max)))
+            grid_size = 5
+            gaze_label_size = 5
+            v_x = [0, 1, -1, 0, 0]
+            v_y = [0, 0, 0, -1, 1]
+
+
+            shifted_grids = np.zeros((grid_size, gaze_label_size, gaze_label_size))
+            for i in range(5):
+
+                x_grid = int(np.floor( gaze_label_size * gaze_x + (v_x[i] * (1/ (grid_size * 3.0))) ) )
+                y_grid = int(np.floor( gaze_label_size * gaze_y + (v_y[i] * (1/ (grid_size * 3.0))) ) )
+
+                if x_grid < 0:
+                    x_grid = 0
+                elif x_grid > 4:
+                    x_grid = 4
+                if y_grid < 0:
+                    y_grid = 0
+                elif y_grid > 4:
+                    y_grid = 4
+
+                try:
+                    shifted_grids[i][y_grid][x_grid] = 1
+                except:
+                    exit()
+
+            shifted_grids = torch.from_numpy(shifted_grids).contiguous()
+
+            shifted_grids = shifted_grids.view(1, 5, 25)
+            gaze_final = np.ones(100)
+            gaze_final *= -1
+            gaze_final[0] = gaze_x
+            gaze_final[1] = gaze_y
+            eyes_loc_size = 13
+            eyes_loc = np.zeros((eyes_loc_size, eyes_loc_size))
+            eyes_loc[int(np.floor(eyes_loc_size * eye_y))][int(np.floor(eyes_loc_size * eye_x))] = 1
+
+            eyes_loc = torch.from_numpy(eyes_loc).contiguous()
+            if self.imshow:
+                img.save("img_aug.jpg")
+
+            if self.transform is not None:
+                img = self.transform(img)
+                face = self.transform(face)
+
+            if self.training == 'test':
+                return img, face, head_channel, head_box, object_channel,gaze_final,eye,gt_bboxes,gt_labels, gaze, image_path, layers, seg_folder, masks
+            else:
+                return img, face, head_channel, object_channel,eyes_loc, image_path, gaze_inside , shifted_grids, gaze_final
