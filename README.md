@@ -32,26 +32,17 @@ Remote gaze estimation from back-head images is a scalable, non-intrusive altern
 
 The full pipeline has three stages:
 
-```
-Raw Video / CCTV Feed
-        │
-        ▼
-┌─────────────────────────┐
-│  Head Detection &       │  YOLOv5s — custom trained on RetailGaze + GOO
-│  Tracking (DeepSORT)    │
-└────────────┬────────────┘
-             │  head bounding box crop
-             ▼
-┌─────────────────────────┐
-│  Gaze Estimation Model  │  Depth-based Dual Attention (DDA) — see below
-│  → Gaze Saliency Map    │
-└────────────┬────────────┘
-             │  heatmap + product segmentation masks
-             ▼
-┌─────────────────────────┐
-│  Gaze Object Prediction │  Rule-based: mask × heatmap → argmax
-└─────────────────────────┘
-```
+<p align="center">
+  <img src="docs/images/fig2_framework_overview.png" width="380" alt="System pipeline overview"/>
+  <br/>
+  <em>Figure 2 (Senarath et al., IEEE Access 2022) — End-to-end system: head detection & tracking → gaze estimation → gaze saliency heatmap → gaze object prediction.</em>
+</p>
+
+**Stage 1 — Head Detection & Tracking:** A custom YOLOv5s detector (trained on RetailGaze + GOO) localises the customer's head, and DeepSORT tracks it across frames. The head bounding box crop is passed to the gaze model.
+
+**Stage 2 — Gaze Estimation (DDA):** The Depth-based Dual Attention model predicts a gaze saliency heatmap from the scene image and head crop. See the [model architectures](#model-architectures) below.
+
+**Stage 3 — Gaze Object Prediction:** A rule-based algorithm multiplies the heatmap element-wise with each product segmentation mask and selects the mask with the highest sum as the gazed-at object.
 
 ---
 
@@ -59,11 +50,29 @@ Raw Video / CCTV Feed
 
 The codebase implements four model architectures, developed iteratively across both publications.
 
+<p align="center">
+  <img src="docs/images/fig3_design_solutions.png" width="420" alt="Four design solutions"/>
+  <br/>
+  <em>Figure 3 (Senarath et al., IEEE Access 2022) — The four design solutions: (a) end-to-end baseline, (b) dual-pathway, (c) + object channel, (d) + depth channel.</em>
+</p>
+
 ### 1. BaseModel (`models/base.py`)
-Baseline: ResNet-50 feature extractor → 2 FC layers → 2D gaze point (x, y). Trained end-to-end on a scene image. Serves as a sanity-check baseline.
+Baseline: ResNet-50 feature extractor → 2 FC layers → 2D gaze point (x, y). Trained end-to-end on a scene image. Corresponds to design solution (a) above.
 
 ### 2. Hypothetical Gaze Distribution — HypoAttention (`models/hypo_attention.py`)
-Introduced in publication [2]. Dual-pathway architecture:
+Introduced in publication [2]. Dual-pathway architecture (design solutions b & c):
+
+<p align="center">
+  <img src="docs/images/fig2_p2_hypoattn_architecture.png" width="700" alt="HypoAttention model architecture"/>
+  <br/>
+  <em>Figure 2 (Pathirana et al., ICARC 2022) — Scene pathway + head pathway + shifted grids architecture.</em>
+</p>
+
+<p align="center">
+  <img src="docs/images/fig4_hypoattn_architecture.png" width="560" alt="Hypothetical gaze distribution model"/>
+  <br/>
+  <em>Figure 4 (Senarath et al., IEEE Access 2022) — Hypothetical Gaze Distribution model with object channel (G), head location (L), and shifted grids output.</em>
+</p>
 
 - **Head pathway** (VGG-16): extracts head feature map; concatenated with the head position channel to compute an attention map over the scene.
 - **Scene pathway** (VGG-16): takes the scene image, head position channel, and **object channel** (binary image of product item bounding box boundaries) as a 5-channel input. The attention map from the head pathway is applied to the scene features.
@@ -71,10 +80,16 @@ Introduced in publication [2]. Dual-pathway architecture:
 
 The **object channel** is the key retail-specific hand-designed feature: a binary mask where product item boundaries are white and background is black. This narrows the gaze estimation search space to plausible shelf locations.
 
-Best backbone result on GOO-Real: **AUC 0.942, L2-dist 0.143, Angular Error 25.2°** (after GazeFollow + GOO-Real transfer learning).
+Best result on GOO-Real: **AUC 0.942, L2-dist 0.143, Angular Error 25.2°** (after GazeFollow + GOO-Real transfer learning).
 
 ### 3. Face3D (`models/face3d.py`)
-Introduced in publication [1] as the first stage of the DDA model. Introduces **monocular depth** as a novel input modality:
+Introduced in publication [1] as the first stage of the DDA model. Introduces **monocular depth** as a novel input modality (design solution d):
+
+<p align="center">
+  <img src="docs/images/fig5_face3d_architecture.png" width="560" alt="Face3D model architecture"/>
+  <br/>
+  <em>Figure 5 (Senarath et al., IEEE Access 2022) — Face3D: scene → MiDaS depth map (d) + head crop → ResNet-50 → 3D gaze vector (gx, gy, gz) → 2D coordinate.</em>
+</p>
 
 - **Depth branch** (MiDaS DPT_Hybrid, frozen): takes the full scene image and produces a normalised depth map.
 - **Gaze branch** (ResNet-50): takes the face/head crop and predicts a **3D gaze vector** (gx, gy, gz) rather than a 2D point.
@@ -84,6 +99,12 @@ Result on GOO-Real: **AUC 0.94, L2-dist 0.15, Angular Error 20.6°**
 
 ### 4. Depth-based Dual Attention — DDA (`Gaze_Dual_Attn/`) [Final Model]
 The full three-stage model from publication [1], combining Face3D and HypoAttention:
+
+<p align="center">
+  <img src="docs/images/fig6_dda_architecture.png" width="750" alt="Depth-based Dual Attention model architecture"/>
+  <br/>
+  <em>Figure 6 (Senarath et al., IEEE Access 2022) — DDA model: Face3D provides 3D gaze (gz, gy, gx) and depth map → FoV Mask Generator + Depth Range Selector → dual attention map (Md ⊗ G) → ResNet-50 heatmap generator.</em>
+</p>
 
 | Stage | Component | Function |
 |---|---|---|
