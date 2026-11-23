@@ -1,0 +1,31 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs and outputs
+*.log
+*.csv
+runs/
+
+# Model checkpoints
+*.pt
+*.pth
+
+# Virtual environments
+.env
+venv/
+env/
